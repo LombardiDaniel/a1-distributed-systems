@@ -1,0 +1,17 @@
+astroid==2.15.5
+async-timeout==4.0.2
+dill==0.3.6
+isort==5.12.0
+jedi==0.18.2
+lazy-object-proxy==1.9.0
+mccabe==0.7.0
+parso==0.8.3
+platformdirs==3.5.3
+pylint==2.17.4
+pyzmq==25.1.0
+redis==4.5.5
+tomli==2.0.1
+tomlkit==0.11.8
+typing_extensions==4.6.3
+wrapt==1.15.0
+zmq==0.0.0
