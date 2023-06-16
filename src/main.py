@@ -23,28 +23,35 @@ logger.addHandler(stdout_handler)
 
 
 DEFAULT_PORT = 5555
-LISTEN_TOPIC_FILTER = "/listen"
+LISTEN_TOPIC_FILTERS = {
+    "broadcast": 0,
+    "logout": 1
+} # must be int - not unicode
 
-def main(*, rcv_usrs: Iterable[str]):
+
+def main(*, desigred_dict: Iterable[str]):
     """
     main func loop
     """
+    
 
-    usr_tbl_dict = Utils.get_usrs_tbl()
-    logger.info("usr_tbl_dict : %s", usr_tbl_dict)
+    logger.info("rcv_usrs_dict : %s", desigred_dict)
 
     zmq_context = zmq.Context()
     snd_socket = zmq_context.socket(zmq.PUB)  # pylint: disable=E1101
     snd_socket.bind(f"tcp://*:{DEFAULT_PORT}")
     rcv_socket = zmq_context.socket(zmq.SUB)  # pylint: disable=E1101
 
-    for name in rcv_usrs:  # só se conecta nos usuários que vc quer ouvir
-        rcv_socket.connect(f"tcp://{usr_tbl_dict[name]}:{DEFAULT_PORT}")
+    for ip in desigred_dict.values():  # só se conecta nos usuários que vc quer ouvir
+        rcv_socket.connect(f"tcp://{ip}:{DEFAULT_PORT}")
 
-    rcv_socket.setsockopt(zmq.SUBSCRIBE, LISTEN_TOPIC_FILTER)  # pylint: disable=E1101
+    for val in LISTEN_TOPIC_FILTERS.values():
+        rcv_socket.setsockopt(zmq.SUBSCRIBE, val)  # pylint: disable=E1101
 
 
 if __name__ == "__main__":
+
+    Utils.set_redis_for_tests()
 
     usr_tbl_dict = Utils.get_usrs_tbl()
     available_usrs = {
@@ -61,18 +68,24 @@ if __name__ == "__main__":
             VALID_USR_NAME = True
         else:
             print("INVALID USERNAME")
-    
-    desigred_conn = -1
-    while desigred_conn == -1:
+
+    Utils().announce_usr(usr_name)
+
+    DESIGNRED_CONN = "-1"
+    while DESIGNRED_CONN == "-1":
         for k, v in available_usrs.items():
             print(f"\t{k}: {v}")
 
-        Utils().announce_usr("danielo")
+        DESIGNRED_CONN = input("Select the desigred usrs: (type IDs seperated by comma (','))\n(-1 to refresh):\n") #.replace(" ", "").split(",")
 
-        desigred_conn = input("Select the desigred usrs: (type IDs seperated by comma (','))\n(-1 to refresh):\n") #.replace(" ", "").split(",")
+    desigred_conn_ids = []
+    desigred_conn_ids = DESIGNRED_CONN.replace(" ", "").split(",")
 
-    desigred_conn_ips = []
-    desigred_conn_ips = desigred_conn.replace(" ", "").split(",")
+    desigred_dict_input = {}
+    for id_ in desigred_conn_ids:
+        name = available_usrs[id_]
+        desigred_dict_input[name] = usr_tbl_dict[name]
 
-    logger.info("desigred_conn_ips: %s", desigred_conn_ips)
-    # main(rcv_usrs=["matheus"])
+    logger.info("desigred_dict: %s", desigred_dict_input)
+
+    main(desigred_dict=desigred_dict_input)

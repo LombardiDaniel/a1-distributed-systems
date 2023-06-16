@@ -1,17 +1,22 @@
-import json
 import os
 import socket
 from threading import Thread
 from time import sleep
 from typing import Any, Iterable, Mapping
 
+from dotenv import load_dotenv
 from redis import Redis
 
+load_dotenv()
 currentdir = os.path.dirname(os.path.realpath(__file__))
 
 REDIS_USR_KEY_PREFIX = "usr:"
 REDIS_USR_KEY_PATTERN = f"{REDIS_USR_KEY_PREFIX}*"
 REDIS_TIMEOUT_SECONDS = 10
+
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "17740"))
+REDIS_PASS = os.getenv("REDIS_PASS")
 
 
 class Utils:
@@ -36,11 +41,11 @@ class Utils:
         # with open(os.path.join(currentdir, "tbl.json"), mode="r", encoding="utf-8") as file:
         #     return json.load(file)
 
-        redis = Redis(host="localhost", port=6379, db=0)
+        redis = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS)
         keys = redis.keys(REDIS_USR_KEY_PATTERN)
 
         return {
-            k[len(REDIS_USR_KEY_PATTERN) - 1:]: redis.get(k) for k in keys
+            k[len(REDIS_USR_KEY_PATTERN) - 1:].decode('utf-8'): redis.get(k).decode('utf-8') for k in keys
         }
 
     @staticmethod
@@ -69,12 +74,12 @@ class Utils:
         try:
             # doesn't even have to be reachable
             s.connect(('8.8.8.8', 1))
-            IP = s.getsockname()[0]
+            ip = s.getsockname()[0]
         except Exception:  # pylint: disable=W0718
-            IP = '127.0.0.1'
+            ip = '127.0.0.1'
         finally:
             s.close()
-        return IP
+        return ip
 
     @staticmethod
     def announce_usr(usr_name: str, /):
@@ -90,7 +95,7 @@ class Utils:
             while True:
                 local_ip = Utils.get_ip()
 
-                redis = Redis(host="localhost", port=6379, db=0)
+                redis = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS)
                 redis.setex(
                     name=f"{REDIS_USR_KEY_PREFIX}{usr_name}",
                     time=REDIS_TIMEOUT_SECONDS,
@@ -100,3 +105,19 @@ class Utils:
                 sleep(REDIS_TIMEOUT_SECONDS - 1)
 
         Thread(target=set_ip_routine).start()
+
+    @staticmethod
+    def set_redis_for_tests():
+        """
+        """
+
+        from faker import Faker
+
+        Faker.seed(42)
+        fake = Faker("pt-BR")
+
+        redis = Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASS)
+        for _ in range(10):
+            name = fake.name()
+            val = fake.ipv4()
+            redis.set(name=f"{REDIS_USR_KEY_PREFIX}{name}", value=val)
