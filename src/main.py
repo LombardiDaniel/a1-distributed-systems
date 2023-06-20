@@ -53,8 +53,9 @@ def main(*, desigred_dict: Iterable[str]):
     RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, BROADCAST_TOPIC)
 
     # TESTS:
-    SEND_SOCKET.send_string(BROADCAST_TOPIC, "eae2")
-    print(RECIEVE_SOCKET.recv_string())
+    msg = "eae2" # trocar wrapper kagado
+    SEND_SOCKET.send(f"{BROADCAST_TOPIC} {msg}".encode("utf-8"))
+    print(RECIEVE_SOCKET.recv())
 
 
 if __name__ == "__main__":
