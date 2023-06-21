@@ -27,6 +27,8 @@ logger.addHandler(stdout_handler)
 DEFAULT_PORT = 5555
 LISTEN_TOPIC_FILTERS = {
     "broadcast": 0,
+    "video": b"broadcast/video",
+    "audio": b"broadcast/audio",
     "logout": 1
 } # must be int - not unicode
 BROADCAST_TOPIC = b""
