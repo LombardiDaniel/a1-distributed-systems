@@ -12,6 +12,7 @@ from threading import Thread
 from typing import Iterable
 
 import cv2
+import numpy as np
 import zmq
 
 from utils import Utils, show_text, show_video  # pylint: disable=E0401
@@ -30,11 +31,11 @@ logger.addHandler(stdout_handler)
 
 DEFAULT_PORT = 5555
 LISTEN_TOPIC_FILTERS = {
-    "broadcast": 0,
+    # "broadcast": 0,
     "text": b"broadcast/text",
     "video": b"broadcast/video",
     "audio": b"broadcast/audio",
-    "logout": 1
+    # "logout": 1
 }
 LISTEN_TOPIC_ROUTINES = {
     b"broadcast/video": show_video,
@@ -71,13 +72,12 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
         msg = RECIEVE_SOCKET.recv()  # AQUI RECEBE, PRECISA STREAMAR FEED PRA TELA
         topic, payload = msg.split(b" ", maxsplit=1)
 
-        logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
+        # logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
         if topic == LISTEN_TOPIC_FILTERS["video"]:
-            frame_bytes = RECIEVE_SOCKET.recv()
-            frame_array = np.frombuffer(frame_bytes, dtype=np.uint8)# Converte os bytes recebidos para um array NumPy
+            frame_array = np.frombuffer(payload, dtype=np.uint8)# Converte os bytes recebidos para um array NumPy
             frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)  # Decodifica o array para obter o frame
-            
+
             cv2.imshow("Recebendo video 2...", frame) #exibe o frame recebido
             if cv2.waitKey(5) == 27: #pressiona esc para sair
                 break
@@ -93,6 +93,7 @@ def broadcast_routine():
     """
 
     id_ = 0 if platform.system() != "Darwin" else 1
+    print(id_)
 
     webcam = cv2.VideoCapture(id_)
     while webcam.isOpened():
