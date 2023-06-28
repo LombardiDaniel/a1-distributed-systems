@@ -1,5 +1,7 @@
 """
 NÃO tem hadshake, td mundo pode escutar, vc só fala quem vc quer q escute
+PRECISA INSTALAR NET-TOOLS
+sudo apt intall net-tools
 """
 
 import logging
@@ -53,6 +55,8 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
     logger.info("connected to %s @ %s", name, endpoint)
 
     RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic_filter)
+
+    logger.info("subd")
 
     while True:
         msg = RECIEVE_SOCKET.recv()  # AQUI RECEBE, PRECISA STREAMAR FEED PRA TELA

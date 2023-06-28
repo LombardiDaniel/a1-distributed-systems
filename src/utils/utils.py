@@ -1,5 +1,7 @@
 import os
+import platform
 import socket
+import subprocess
 from threading import Thread
 from time import sleep
 from typing import Any, Iterable, Mapping
@@ -17,6 +19,13 @@ REDIS_TIMEOUT_SECONDS = 10
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "17740"))
 REDIS_PASS = os.getenv("REDIS_PASS")
+
+
+GET_IP_COMDS = {
+    "Windows": "ifconfig | grep \"inet \" | grep -Fv 127.0.0.1 | awk '{print $2}' ",
+    "Darwin": "ifconfig | grep \"inet \" | grep -Fv 127.0.0.1 | awk '{print $2}' ",
+    "Linux": ""
+}
 
 
 class Utils:
@@ -76,7 +85,9 @@ class Utils:
             s.connect(('8.8.8.8', 1))
             ip = s.getsockname()[0]
         except Exception:  # pylint: disable=W0718
-            ip = '127.0.0.1'
+            cmd = GET_IP_COMDS[platform.system()]
+
+            ip = subprocess.run(["/bin/sh", "-c", cmd], stdout=subprocess.PIPE).stdout[:-1].decode('utf-8')
         finally:
             s.close()
         return ip
