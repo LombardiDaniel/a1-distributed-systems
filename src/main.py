@@ -29,6 +29,7 @@ logger.addHandler(stdout_handler)
 DEFAULT_PORT = 5555
 LISTEN_TOPIC_FILTERS = {
     "broadcast": 0,
+    "text": b"broadcast/text",
     "video": b"broadcast/video",
     "audio": b"broadcast/audio",
     "logout": 1
@@ -54,7 +55,8 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
 
     logger.info("connected to %s @ %s", name, endpoint)
 
-    RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic_filter)
+    for topic in LISTEN_TOPIC_FILTERS.values():
+        RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic)
 
     logger.info("subd")
 
