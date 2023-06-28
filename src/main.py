@@ -1,11 +1,12 @@
 """
-NÃO tem hadshake, td mundo pode escutar, vc só fala quem vc quer q escute
 PRECISA INSTALAR NET-TOOLS
 sudo apt intall net-tools
+NÃO tem hadshake, td mundo pode escutar, vc só fala quem vc quer q escute
 """
 
 import logging
 import os
+import platform
 import sys
 from threading import Thread
 from typing import Iterable
@@ -72,23 +73,36 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
 
         logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
-        LISTEN_TOPIC_ROUTINES[topic](payload)
+        if topic == LISTEN_TOPIC_FILTERS["video"]:
+            frame_bytes = RECIEVE_SOCKET.recv()
+            frame_array = np.frombuffer(frame_bytes, dtype=np.uint8)# Converte os bytes recebidos para um array NumPy
+            frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)  # Decodifica o array para obter o frame
+            
+            cv2.imshow("Recebendo video 2...", frame) #exibe o frame recebido
+            if cv2.waitKey(5) == 27: #pressiona esc para sair
+                break
+        
+        else:
+            LISTEN_TOPIC_ROUTINES[topic](payload)
+
+    cv2.destroyAllWindows()
 
 def broadcast_routine():
     """
     broadcasts video to anyone listening
     """
 
-    webcam = cv2.VideoCapture(0)
+    id_ = 0 if platform.system() != "Darwin" else 1
+
+    webcam = cv2.VideoCapture(id_)
     while webcam.isOpened():
         validacao, frame = webcam.read()
         if not validacao:
             break
-        encoded_frame = cv2.imencode('.webp', frame)[1]  # Codifica o frame como 
+        encoded_frame = cv2.imencode('.webp', frame)[1]
         
         SEND_SOCKET.send(LISTEN_TOPIC_FILTERS["video"] + b" " + encoded_frame.tobytes()) #envia o frame em bytes
         
-        cv2.imshow("Enviando video 1...", frame) #exibe o frame enviado (video)
         if cv2.waitKey(5) == 27: #pressiona esc para sair
             break
 
@@ -103,7 +117,7 @@ def main(*, desigred_dict: Iterable[str]):
 
     logger.info("rcv_usrs_dict : %s", desigred_dict)
 
-    Thread(target=broadcast_routine).start()
+    # Thread(target=broadcast_routine).start()
     for name, ip in desigred_dict.items():  # só se conecta nos usuários que vc quer ouvir
         # TODO: fix topic_filter
         topic_filter = b""
