@@ -75,14 +75,16 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
         # logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
         if topic == LISTEN_TOPIC_FILTERS["video"]:
+            logger.info(".")
             frame_array = np.frombuffer(payload, dtype=np.uint8)# Converte os bytes recebidos para um array NumPy
             frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)  # Decodifica o array para obter o frame
 
-            cv2.imshow("Recebendo video 2...", frame) #exibe o frame recebido
+            cv2.imshow(name, frame) #exibe o frame recebido
             if cv2.waitKey(5) == 27: #pressiona esc para sair
                 break
         
         else:
+            logger.info(topic)
             LISTEN_TOPIC_ROUTINES[topic](payload)
 
     cv2.destroyAllWindows()
