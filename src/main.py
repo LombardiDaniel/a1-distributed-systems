@@ -75,6 +75,10 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
         LISTEN_TOPIC_ROUTINES[topic](payload)
 
 def broadcast_routine():
+    """
+    broadcasts video to anyone listening
+    """
+
     webcam = cv2.VideoCapture(0)
     while webcam.isOpened():
         validacao, frame = webcam.read()
@@ -99,6 +103,7 @@ def main(*, desigred_dict: Iterable[str]):
 
     logger.info("rcv_usrs_dict : %s", desigred_dict)
 
+    Thread(target=broadcast_routine).start()
     for name, ip in desigred_dict.items():  # só se conecta nos usuários que vc quer ouvir
         # TODO: fix topic_filter
         topic_filter = b""
