@@ -6,6 +6,8 @@ isort==5.12.0
 jedi==0.18.2
 lazy-object-proxy==1.9.0
 mccabe==0.7.0
+numpy==1.25.0
+opencv-python==4.7.0.72
 parso==0.8.3
 platformdirs==3.5.3
 pylint==2.17.4

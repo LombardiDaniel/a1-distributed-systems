@@ -10,9 +10,10 @@ import sys
 from threading import Thread
 from typing import Iterable
 
+import cv2
 import zmq
 
-from utils import Utils  # pylint: disable=E0401
+from utils import Utils, show_text, show_video  # pylint: disable=E0401
 from utils.constants import DATETIME_LOG_FORMAT, LOG_FORMAT
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,12 @@ LISTEN_TOPIC_FILTERS = {
     "video": b"broadcast/video",
     "audio": b"broadcast/audio",
     "logout": 1
-} # must be int - not unicode
+}
+LISTEN_TOPIC_ROUTINES = {
+    b"broadcast/video": show_video,
+    b"broadcast/text": show_text,
+}
+
 BROADCAST_TOPIC = b""
 
 
@@ -66,6 +72,25 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
 
         logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
+        LISTEN_TOPIC_ROUTINES[topic](payload)
+
+def broadcast_routine():
+    webcam = cv2.VideoCapture(0)
+    while webcam.isOpened():
+        validacao, frame = webcam.read()
+        if not validacao:
+            break
+        encoded_frame = cv2.imencode('.webp', frame)[1]  # Codifica o frame como 
+        
+        SEND_SOCKET.send(LISTEN_TOPIC_FILTERS["video"] + b" " + encoded_frame.tobytes()) #envia o frame em bytes
+        
+        cv2.imshow("Enviando video 1...", frame) #exibe o frame enviado (video)
+        if cv2.waitKey(5) == 27: #pressiona esc para sair
+            break
+
+    webcam.release() #encerra conexao com a webcam
+    cv2.destroyAllWindows()
+
 
 def main(*, desigred_dict: Iterable[str]):
     """
@@ -82,10 +107,12 @@ def main(*, desigred_dict: Iterable[str]):
         LISTEN_THREADS.append(t)
 
 
-    # TESTS:
+    # TESTS_TEXT:
     while msg := input():
         SEND_SOCKET.send(f"{BROADCAST_TOPIC} {msg}".encode("utf-8")) # AQUI ENVIA
+        print("SENT!")
 
+    
 
 if __name__ == "__main__":
 
