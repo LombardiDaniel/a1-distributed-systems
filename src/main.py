@@ -135,6 +135,8 @@ def main(*, desigred_dict: Iterable[str]):
     # TESTS_TEXT:
     # print(LISTEN_TOPIC_FILTERS['text'])
     while msg := input():
+        if msg == "":
+            continue
         SEND_SOCKET.send(f"{LISTEN_TOPIC_FILTERS['text']} {msg}".encode("utf-8")) # AQUI ENVIA
         print("SENT!")
 
