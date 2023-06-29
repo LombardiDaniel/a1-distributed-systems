@@ -19,7 +19,7 @@ from utils import Utils, show_text, show_video  # pylint: disable=E0401
 from utils.constants import DATETIME_LOG_FORMAT, LOG_FORMAT
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 formatter = logging.Formatter(LOG_FORMAT, DATETIME_LOG_FORMAT)
 file_handler = logging.FileHandler(f"{__name__}.log")
 file_handler.setFormatter(formatter)
@@ -38,7 +38,6 @@ LISTEN_TOPIC_FILTERS = {
     # "logout": 1
 }
 LISTEN_TOPIC_ROUTINES = {
-    b"broadcast/video": show_video,
     b"broadcast/text": show_text,
 }
 
@@ -66,10 +65,12 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
     for topic in LISTEN_TOPIC_FILTERS.values():
         RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic)
 
+    RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, b"")
+
     logger.info("subd")
 
     while True:
-        msg = RECIEVE_SOCKET.recv()  # AQUI RECEBE, PRECISA STREAMAR FEED PRA TELA
+        msg = RECIEVE_SOCKET.recv()
         topic, payload = msg.split(b" ", maxsplit=1)
 
         # logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
@@ -83,9 +84,12 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
             if cv2.waitKey(5) == 27: #pressiona esc para sair
                 break
         
-        else:
+        if topic == LISTEN_TOPIC_FILTERS["text"]:
             logger.info(topic)
-            LISTEN_TOPIC_ROUTINES[topic](payload)
+            show_text(payload)
+
+        logger.info(topic)
+        show_text(payload)
 
     cv2.destroyAllWindows()
 
@@ -95,7 +99,6 @@ def broadcast_routine():
     """
 
     id_ = 0 if platform.system() != "Darwin" else 1
-    print(id_)
 
     webcam = cv2.VideoCapture(id_)
     while webcam.isOpened():
@@ -120,7 +123,7 @@ def main(*, desigred_dict: Iterable[str]):
 
     logger.info("rcv_usrs_dict : %s", desigred_dict)
 
-    Thread(target=broadcast_routine).start()
+    # Thread(target=broadcast_routine).start()
     for name, ip in desigred_dict.items():  # só se conecta nos usuários que vc quer ouvir
         # TODO: fix topic_filter
         topic_filter = b""
@@ -130,6 +133,7 @@ def main(*, desigred_dict: Iterable[str]):
 
 
     # TESTS_TEXT:
+    # print(LISTEN_TOPIC_FILTERS['text'])
     while msg := input():
         SEND_SOCKET.send(f"{LISTEN_TOPIC_FILTERS['text']} {msg}".encode("utf-8")) # AQUI ENVIA
         print("SENT!")
