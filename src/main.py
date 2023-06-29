@@ -3,12 +3,12 @@ PRECISA INSTALAR NET-TOOLS
 sudo apt intall net-tools
 NÃO tem hadshake, td mundo pode escutar, vc só fala quem vc quer q escute
 """
-
 import logging
 import os
 import platform
 import sys
 from threading import Thread
+from time import sleep
 from typing import Iterable
 
 import cv2
@@ -108,7 +108,7 @@ def broadcast_routine():
         encoded_frame = cv2.imencode('.webp', frame)[1]
         
         SEND_SOCKET.send(LISTEN_TOPIC_FILTERS["video"] + b" " + encoded_frame.tobytes()) #envia o frame em bytes
-        
+        sleep(0.04)  # 24 fps
         if cv2.waitKey(5) == 27: #pressiona esc para sair
             break
 
