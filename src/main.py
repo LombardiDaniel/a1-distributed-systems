@@ -72,6 +72,7 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
     while True:
         msg = RECIEVE_SOCKET.recv()
         topic, payload = msg.split(b" ", maxsplit=1)
+        logger.info(topic)
 
         # logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
@@ -85,11 +86,7 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
                 break
         
         if topic == LISTEN_TOPIC_FILTERS["text"]:
-            logger.info(topic)
             show_text(payload)
-
-        logger.info(topic)
-        show_text(payload)
 
     cv2.destroyAllWindows()
 
@@ -123,7 +120,7 @@ def main(*, desigred_dict: Iterable[str]):
 
     logger.info("rcv_usrs_dict : %s", desigred_dict)
 
-    Thread(target=broadcast_routine).start()
+    # Thread(target=broadcast_routine).start()
     for name, ip in desigred_dict.items():  # só se conecta nos usuários que vc quer ouvir
         # TODO: fix topic_filter
         topic_filter = b""
