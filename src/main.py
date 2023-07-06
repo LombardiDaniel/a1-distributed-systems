@@ -32,9 +32,9 @@ logger.addHandler(stdout_handler)
 DEFAULT_PORT = 5555
 LISTEN_TOPIC_FILTERS = {
     # "broadcast": 0,
-    "text": b"broadcast/text",
-    "video": b"broadcast/video",
-    "audio": b"broadcast/audio",
+    "text": "broadcast/text",
+    "video": "broadcast/video",
+    "audio": "broadcast/audio",
     # "logout": 1
 }
 LISTEN_TOPIC_ROUTINES = {
@@ -63,7 +63,7 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
     logger.info("connected to %s @ %s", name, endpoint)
 
     for topic in LISTEN_TOPIC_FILTERS.values():
-        RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic)
+        RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, topic.encode('utf-8'))
 
     RECIEVE_SOCKET.setsockopt(zmq.SUBSCRIBE, b"")
 
@@ -72,11 +72,12 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
     while True:
         msg = RECIEVE_SOCKET.recv()
         topic, payload = msg.split(b" ", maxsplit=1)
-        logger.info(topic)
+        topic_str = topic.decode('utf-8')
+        # logger.info(topic)
 
         # logger.info("rcvd from topic: '%s'; msg:'%s'", topic.decode("utf-8"), payload.decode("utf-8"))
 
-        if topic == LISTEN_TOPIC_FILTERS["video"]:
+        if topic_str == "b'broadcast/video'":
             logger.info(".")
             frame_array = np.frombuffer(payload, dtype=np.uint8)  # Converte os bytes recebidos para um array NumPy
             frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)  # Decodifica o array para obter o frame
@@ -85,8 +86,10 @@ def recv_routine(name: str, ip: str, topic_filter: bytes):
             if cv2.waitKey(5) == 27: #pressiona esc para sair
                 break
         
-        if topic == LISTEN_TOPIC_FILTERS["text"]:
+        if topic_str == "b'broadcast/text'":
             show_text(payload)
+        #print(topic_str, type(topic_str))
+        #print(payload)
 
     cv2.destroyAllWindows()
 
@@ -95,16 +98,14 @@ def broadcast_routine():
     broadcasts video to anyone listening
     """
 
-    id_ = 0 if platform.system() != "Darwin" else 1
-
-    webcam = cv2.VideoCapture(id_)
+    webcam = cv2.VideoCapture(0)
     while webcam.isOpened():
         validacao, frame = webcam.read()
         if not validacao:
             break
-        encoded_frame = cv2.imencode('.webp', frame)[1]
+        encoded_frame = cv2.imencode('.jpg', frame)[1]
         
-        SEND_SOCKET.send(LISTEN_TOPIC_FILTERS["video"] + b" " + encoded_frame.tobytes()) #envia o frame em bytes
+        SEND_SOCKET.send(LISTEN_TOPIC_FILTERS["video"].encode('utf-8') + b" " + encoded_frame.tobytes()) #envia o frame em bytes
         sleep(0.04)  # 24 fps
         if cv2.waitKey(5) == 27: #pressiona esc para sair
             break
@@ -120,7 +121,7 @@ def main(*, desigred_dict: Iterable[str]):
 
     logger.info("rcv_usrs_dict : %s", desigred_dict)
 
-    # Thread(target=broadcast_routine).start()
+    Thread(target=broadcast_routine).start()
     for name, ip in desigred_dict.items():  # só se conecta nos usuários que vc quer ouvir
         # TODO: fix topic_filter
         topic_filter = b""
