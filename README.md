@@ -14,6 +14,12 @@ Nodes search for other nodes based on pre-defined username. (no mutex tho)
 
 ---
 
+NOTE: É preciso instalar os `requirements.txt` e ter a versão 3.10 do python instalada.
+
+Para rodar o programa, inicialmente é preciso criar uma instância no Redis, criar um arquivo `.env` (no diretorio `src`), seguindo o modelo do `.env.example` e basta rodar main.py (de dentro da pasta src)
+
+---
+
 A network with 6 nodes. They wish to connect to the pink node.
 ![0](imgs/0.png)
 
